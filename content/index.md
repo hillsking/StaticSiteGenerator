@@ -2,9 +2,9 @@
 
 ![JRR Tolkien sitting](/images/tolkien.png)
 
-Here's the deal, **I like Tolkien**.
+Here's the deal, **I like _Tolkien_**.
 
-> "I am in fact a Hobbit in all but size."
+> "I am in fact a `Hobbit` in all but size."
 >
 > -- J.R.R. Tolkien
 
@@ -16,7 +16,7 @@ Here's the deal, **I like Tolkien**.
 
 ## Reasons I like Tolkien
 
-- You can spend years studying the legendarium and still not understand its depths
+- You can spend **years** studying the legendarium and still _**not** understand_ its depths
 - It can be enjoyed by children and adults alike
 - Disney _didn't ruin it_ (okay, but Amazon might have)
 - It created an entirely new genre of fantasy
@@ -37,7 +37,7 @@ Here's the deal, **I like Tolkien**.
 
 **The Lord of the Rings** has > 1,000 pages of pure adventure, while **The Hobbit** has < 400 pages but is equally brilliant. The reading experience is like this: _LOTR > everything else_.
 
-Fun fact: Tolkien used over 10,000 unique words, making his vocabulary impressive: `richness = unique / total > 0.15`
+Fun fact: Tolkien used over 10,000 unique words, making his vocabulary stats impressive: `vocabulary_richness = unique_words / total_words > 0.15`
 
 As Professor Tolkien said: "Fantasy is escapist, and that is its glory." He also noted that **"myths & legends"** are the foundation of all great stories.
 

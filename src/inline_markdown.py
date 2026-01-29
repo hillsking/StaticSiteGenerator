@@ -2,41 +2,62 @@ import re
 from typing import List, Tuple
 from textnode import TextNode, TextType
 
+DELIMETERS = {"**": TextType.BOLD,
+              "_": TextType.ITALIC,
+              "`": TextType.CODE}
 
-def split_nodes_delimiter(old_nodes: List[TextNode], 
-                          delimiter: str, text_type: TextType) -> List[TextNode]:
-    """Args: old_nodes - List of TextNodes to split by delimiter, 
-             delimiter - The markdown delimiter to split by (e.g. "**" for bold),
-             text_type - The TextType to assign to the split parts.
-       Returns: A new list of TextNodes with the specified delimiter split out."""
+
+def create_nodes_by_delimiter(text: str) -> List[TextNode]:
+    """Args: text - The text to scan recursively.
+       Returns: A list of TextNodes split by delimiters."""
+    if not text:
+        return []
     
+    for i in range(len(text)):
+        # Check for delimiters at current position
+        delim = (text[i] if text[i] in DELIMETERS else
+                 text[i:i+2] if len(text) > i+1 and text[i:i+2] in DELIMETERS else None)
+        if delim is None:
+            continue  # No delimiter at this position - skip
+        
+        # Find the matching closing delimiter
+        start_idx, end_idx = i, text.find(delim, i + len(delim))
+        if end_idx == -1:
+            continue  # No closing delimiter found - skip
+        
+        # Extract content between delimiters
+        content = text[start_idx + len(delim): end_idx]
+        if not content:
+            continue  # Empty content between delimiters - skip
+        
+        # Recursively process content for nested formatting
+        children: List[TextNode] = []
+        if delim != "`":
+            children = create_nodes_by_delimiter(content)
+
+        # Check if content has nested formatting or is plain text
+        has_nesting = len(children) > 1 or (len(children) == 1 and children[0].text_type != TextType.TEXT)
+
+        # Return [TEXT before delimiter + delimited content/children + recursively scan after]
+        return (([TextNode(text[0:start_idx], TextType.TEXT)] if text[0:start_idx] else []) +
+                ([TextNode(text='', text_type=DELIMETERS[delim], children=children)] if has_nesting else
+                 [TextNode(text=content, text_type=DELIMETERS[delim])]) +
+                 create_nodes_by_delimiter(text[end_idx + len(delim):]))
+    
+    # No paired delimiters found - return entire text as TEXT node
+    return [TextNode(text, TextType.TEXT)]
+
+
+def split_nodes_delimiter(old_nodes: List[TextNode]) -> List[TextNode]:
+    """Args: old_nodes - List of TextNodes to split by delimiter,
+       Returns: A new list of TextNodes with the specified delimiter split out."""
     lst: List[TextNode] = []
     for node in old_nodes:
-        # If the node is not plain text or has no delimiter, we keep it as is
-        if node.text_type != TextType.TEXT or delimiter not in node.text:
+        if node.text_type != TextType.TEXT:
             lst.append(node)
             continue
-        
-        parts = node.text.split(delimiter)
-        # If the delimiter is not found or unmatched, raise an error
-        if len(parts) % 2 == 0:
-            raise ValueError(f"Unmatched delimiter '{delimiter}' in text '{node.text}'")
-        
-        # Otherwise, we split by the delimiter
-        for i, part in enumerate(parts):
-            if i % 2 == 0:
-                # Even index: plain text
-                if part:
-                    lst.append(TextNode(part, TextType.TEXT))
-            else:
-                # Odd index: formatted text
-                if part:
-                    lst.append(TextNode(part, text_type))
-                else:
-                    raise ValueError(f"Empty text between delimiters '{delimiter}' in text '{node.text}'")
-
+        lst.extend(create_nodes_by_delimiter(node.text))
     return lst
-
 
 def extract_markdown_images(text: str) -> List[Tuple[str, str]]:
     """Args: text - The markdown text to extract images from.
@@ -111,11 +132,4 @@ def text_to_textnodes(text: str) -> List[TextNode]:
        Returns: A list of text nodes with all text_types in original text in order."""
     if not text:
         return []
-    nodes = [TextNode(text, TextType.TEXT)]  # Initial node with all text
-    
-    # Process delimiters in order
-    for delimiter, text_type in [("**", TextType.BOLD), ("_", TextType.ITALIC), ("`", TextType.CODE)]:
-        nodes = split_nodes_delimiter(nodes, delimiter, text_type)
-    
-    # Process links and images
-    return split_nodes_link(split_nodes_image(nodes))
+    return split_nodes_delimiter(split_nodes_link(split_nodes_image([TextNode(text, TextType.TEXT)])))

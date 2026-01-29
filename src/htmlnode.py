@@ -100,14 +100,22 @@ class ParentNode(HTMLNode):
                 f"</{self.tag}>")
 
 
-def text_node_to_html_node(text_node: TextNode) -> LeafNode:
+def text_node_to_html_node(text_node: TextNode) -> LeafNode | ParentNode:
     """Convert a TextNode to an HTML LeafNode."""
     if text_node.text_type == TextType.TEXT:
         return LeafNode(tag=None, value=text_node.text)
     elif text_node.text_type == TextType.BOLD:
-        return LeafNode(tag="b", value=text_node.text)
+        if text_node.children:
+            return ParentNode(tag="b",
+                children=[text_node_to_html_node(child) for child in text_node.children])
+        else:
+            return LeafNode(tag="b", value=text_node.text)
     elif text_node.text_type == TextType.ITALIC:
-        return LeafNode(tag="i", value=text_node.text)
+        if text_node.children:
+            return ParentNode(tag="i",
+                children=[text_node_to_html_node(child) for child in text_node.children])
+        else:
+            return LeafNode(tag="i", value=text_node.text)
     elif text_node.text_type == TextType.CODE:
         return LeafNode(tag="code", value=text_node.text)
     elif text_node.text_type == TextType.LINK:
