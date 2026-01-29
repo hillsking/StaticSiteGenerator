@@ -2,6 +2,23 @@ from typing import Optional, List, Dict
 from textnode import TextNode, TextType
 
 
+# HTML5 void elements (self-closing tags that cannot have content)
+VOID_ELEMENTS = frozenset(
+    ['area', 'base', 'br', 'col', 'embed', 'hr', 'img',
+     'input', 'link', 'meta', 'source', 'track', 'wbr']
+)
+
+
+def html_escape(text: str) -> str:
+    """Escape special HTML characters"""
+    return (text
+            .replace('&', '&amp;')
+            .replace('<', '&lt;')
+            .replace('>', '&gt;')
+            .replace('"', '&quot;')
+            .replace("'", '&#x27;'))
+
+
 class HTMLNode:
     """Base class representing an HTML node.
         Args:
@@ -28,7 +45,9 @@ class HTMLNode:
         raise NotImplementedError("to_html method must be implemented by subclasses")
     
     def props_to_html(self) -> str:
-        return ('' if not self.props else ''.join(f' {key}="{value}"' for key, value in self.props.items()))
+        if not self.props:
+            return ''
+        return ''.join(f' {key}="{html_escape(value)}"' for key, value in self.props.items())
 
 
 class LeafNode(HTMLNode):
@@ -48,7 +67,13 @@ class LeafNode(HTMLNode):
     def to_html(self) -> str:
         if self.value is None:
             raise ValueError("LeafNode must have a value to convert to HTML")
-        return f"<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>" if self.tag else self.value
+        if not self.tag:
+            return html_escape(self.value)
+
+        if self.tag in VOID_ELEMENTS:
+            return f"<{self.tag}{self.props_to_html()} />"
+
+        return f"<{self.tag}{self.props_to_html()}>{html_escape(self.value)}</{self.tag}>"
 
 
 class ParentNode(HTMLNode):

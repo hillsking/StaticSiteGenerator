@@ -33,6 +33,14 @@ Here's the deal, **I like Tolkien**.
 8. Sauron
 9. Aragorn
 
+## Books & Reading Stats
+
+**The Lord of the Rings** has > 1,000 pages of pure adventure, while **The Hobbit** has < 400 pages but is equally brilliant. The reading experience is like this: _LOTR > everything else_.
+
+Fun fact: Tolkien used over 10,000 unique words, making his vocabulary impressive: `richness = unique / total > 0.15`
+
+As Professor Tolkien said: "Fantasy is escapist, and that is its glory." He also noted that **"myths & legends"** are the foundation of all great stories.
+
 Here's what `elflang` looks like (the perfect coding language):
 
 ```
