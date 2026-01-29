@@ -3,7 +3,14 @@ from textnode import TextNode, TextType
 
 
 class HTMLNode:
-    """Base class representing an HTML node."""
+    """Base class representing an HTML node.
+        Args:
+            Optional[tag] - The HTML tag name (e.g. "p", "a", "h1", etc.)
+            Optional[value] - The value of the HTML tag (e.g. the text inside a paragraph)
+            Optional[children] - Lower level HTMLNode children
+            Optional[props] - Attributes of the HTML tag
+    """
+
     def __init__(self, tag: Optional[str] = None, 
                  value: Optional[str] = None,
                  children: Optional[List["HTMLNode"]] = None,
@@ -25,7 +32,12 @@ class HTMLNode:
 
 
 class LeafNode(HTMLNode):
-    """Class representing an HTML node that does not have children."""
+    """Class representing an HTML node that does not have children.
+        Args:
+            Optional[tag] - The HTML tag name (e.g. "p", "a", "h1", etc.)
+            value - The value of the HTML tag (e.g. the text inside a paragraph)
+            Optional[props] - Attributes of the HTML tag
+        """
     def __init__(self, tag: Optional[str], value: str,
                  props: Optional[Dict[str, str]] = None) -> None:
         super().__init__(tag=tag, value=value, children=None, props=props)
@@ -40,7 +52,12 @@ class LeafNode(HTMLNode):
 
 
 class ParentNode(HTMLNode):
-    """Class representing an HTML node that have children."""
+    """Class representing an HTML node that have children.
+        Args:
+            tag - The HTML tag name (e.g. "div", "ul", "section", etc.)
+            children - Lower level HTMLNode children
+            Optional[props] - Attributes of the HTML tag
+    """
     def __init__(self, tag: str, children: List["HTMLNode"],
                  props: Optional[Dict[str, str]] = None) -> None:
         super().__init__(tag=tag, value=None, children=children, props=props)
