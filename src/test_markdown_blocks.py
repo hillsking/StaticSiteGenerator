@@ -265,4 +265,58 @@ The end.
         "<p>The end.</p>"
         "</div>",
     )
-        
+
+    # Tests for hard line breaks (two spaces + \n) #
+    def test_hard_line_break_simple(self):
+        md = "Line 1  \nLine 2"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><p>Line 1<br />Line 2</p></div>")
+
+    def test_hard_line_break_multiple(self):
+        md = "Line 1  \nLine 2  \nLine 3"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><p>Line 1<br />Line 2<br />Line 3</p></div>")
+
+    def test_hard_line_break_with_bold(self):
+        md = "**Bold text**  \nNext line"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><p><b>Bold text</b><br />Next line</p></div>")
+
+    def test_hard_line_break_with_italic(self):
+        md = "_Italic_  \n**Bold**  \n`code`"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><p><i>Italic</i><br /><b>Bold</b><br /><code>code</code></p></div>")
+
+    def test_hard_line_break_mixed_with_soft(self):
+        md = "Soft\nLine 1  \nHard break  \nLine 2"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><p>Soft Line 1<br />Hard break<br />Line 2</p></div>")
+
+    def test_hard_line_break_in_blockquote(self):
+        md = "> Quote line 1  \n> Quote line 2"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><blockquote>Quote line 1<br />Quote line 2</blockquote></div>")
+
+    def test_hard_line_break_with_link(self):
+        md = "[Link](https://example.com)  \nNext line"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, '<div><p><a href="https://example.com">Link</a><br />Next line</p></div>')
+
+    def test_soft_line_break_still_works(self):
+        md = "Line 1\nLine 2\nLine 3"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><p>Line 1 Line 2 Line 3</p></div>")
+
+    def test_hard_line_break_address_example(self):
+        md = "John Doe  \n123 Main St  \nNew York, NY 10001"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><p>John Doe<br />123 Main St<br />New York, NY 10001</p></div>")

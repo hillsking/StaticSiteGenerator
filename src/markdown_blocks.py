@@ -39,9 +39,26 @@ def block_to_block_type(block: str) -> BlockType:
     
 
 def parse_children(text: str) -> List[HTMLNode | LeafNode | ParentNode]:
-    """Args: text - The markdown text to parse into HTMLNodes.
-       Returns: A list of HTMLNodes representing the parsed text."""
-    return [text_node_to_html_node(text_node) for text_node in text_to_textnodes(' '.join(text.split()))]
+    """Parse markdown text into HTML nodes.
+        Args: text - The markdown text to parse into HTMLNodes.
+        Returns: A list of HTMLNodes representing the parsed text.
+    """
+    if not text:
+        return []
+
+    # Split by hard line breaks (two spaces + newline)
+    parts = text.split('  \n')
+    result: List[HTMLNode | LeafNode | ParentNode] = []
+
+    for i, part in enumerate(parts):
+        if part:
+            # Normalize whitespace (soft line breaks become spaces)
+            result.extend([text_node_to_html_node(tn) for tn in text_to_textnodes(' '.join(part.split()))])
+        # Insert <br /> between parts (but not after the last part)
+        if i < len(parts) - 1:
+            result.append(LeafNode(tag="br", value=""))
+
+    return result
 
 
 def markdown_to_html_node(markdown: str) -> ParentNode:

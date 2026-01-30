@@ -51,4 +51,10 @@ func main(){
 
 Want to get in touch? [Contact me here](/contact).
 
+---
+
+**Created by:** J.R.R. Tolkien Enthusiast  
+**Location:** Middle-earth (spiritually)  
+**Favorite quote:** _"Not all those who wander are lost"_
+
 This site was generated with a custom-built [static site generator](https://www.boot.dev/courses/build-static-site-generator-python) from the course on [Boot.dev](https://www.boot.dev).
