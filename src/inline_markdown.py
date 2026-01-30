@@ -62,13 +62,13 @@ def split_nodes_delimiter(old_nodes: List[TextNode]) -> List[TextNode]:
 def extract_markdown_images(text: str) -> List[Tuple[str, str]]:
     """Args: text - The markdown text to extract images from.
        Returns: A list of tuples containing (alt_text, url) for each image found."""
-    return re.findall(r'!\[([^\[\]]*)\]\(([^\(\)]*)\)', text)
+    return re.findall(r'!\[([^\[\]]*)]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)
 
 
 def extract_markdown_links(text: str) -> List[Tuple[str, str]]:    
     """Args: text - The markdown text to extract links from.
        Returns: A list of tuples containing (link_text, url) for each link found."""
-    return re.findall(r'(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)', text)
+    return re.findall(r'(?<!!)\[([^\[\]]*)]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)
 
 
 def split_nodes_image(old_nodes: List[TextNode]) -> List[TextNode]:

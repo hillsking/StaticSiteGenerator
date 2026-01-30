@@ -396,6 +396,19 @@ class TestInlineMarkdown(unittest.TestCase):
     def test_extract_markdown_links_with_image_before(self):
         self.assertEqual(extract_markdown_links("![Alt text](https://example.com/image.png) and [link](https://example.com)"),
                         [("link", "https://example.com")])
+
+    ### Tests for URLs with parentheses ###
+    def test_extract_markdown_links_url_with_parens(self):
+        self.assertEqual(extract_markdown_links("[Python](https://en.wikipedia.org/wiki/Python_(programming_language))"),
+                        [("Python", "https://en.wikipedia.org/wiki/Python_(programming_language)")])
+
+    def test_extract_markdown_links_url_with_multiple_parens(self):
+        self.assertEqual(extract_markdown_links("[API](http://example.com/api_(v2)_ref_(latest))"),
+                        [("API", "http://example.com/api_(v2)_ref_(latest)")])
+
+    def test_extract_markdown_images_url_with_parens(self):
+        self.assertEqual(extract_markdown_images("![diagram](http://example.com/img_(1).png)"),
+                        [("diagram", "http://example.com/img_(1).png")])
     
 
     ### Test for split_nodes_image function ###

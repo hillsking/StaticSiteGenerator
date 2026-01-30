@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from typing import List
 from htmlnode import HTMLNode, LeafNode, ParentNode, text_node_to_html_node
@@ -55,9 +56,9 @@ def block_to_block_type(block: str) -> BlockType:
         return BlockType.CODE
     elif all(line.startswith('>') for line in block.splitlines()):
         return BlockType.QUOTE
-    elif all(line.startswith("- ") for line in block.splitlines()):
+    elif all(line.startswith(("- ", "* ", "+ ")) for line in block.splitlines()):
         return BlockType.UNORDERED_LIST
-    elif all(line.startswith(f"{i}. ") for i, line in enumerate(block.splitlines(), start=1)):
+    elif all(re.match(r'^\d+\. ', line) for line in block.splitlines()):
         return BlockType.ORDERED_LIST
     else:
         return BlockType.PARAGRAPH
@@ -111,11 +112,14 @@ def markdown_to_html_node(markdown: str) -> ParentNode:
                             text_node_to_html_node(TextNode(code_content, TextType.TEXT))])]))
 
         elif block_type == BlockType.QUOTE:
-            quote_text = '\n'.join(line.lstrip('> ') for line in block.splitlines())
+            quote_text = '\n'.join(
+                line[2:] if line.startswith('> ') else line[1:]
+                for line in block.splitlines()
+            )
             children.append(ParentNode(tag="blockquote", children=parse_children(quote_text)))
 
         elif block_type == BlockType.UNORDERED_LIST:
-            list_items = [line[2:].strip() for line in block.splitlines()]
+            list_items = [line[2:] for line in block.splitlines()]  # Skip "- ", "* ", or "+ "
             children.append(ParentNode(tag="ul", children=[
                             ParentNode(tag="li", children=parse_children(item)) for item in list_items]))
             

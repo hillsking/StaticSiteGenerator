@@ -84,8 +84,29 @@ This is the same paragraph on a new line
         block = "- Item one\n- Item two\n- Item three"
         self.assertEqual(block_to_block_type(block), BlockType.UNORDERED_LIST)
 
+    def test_unordered_list_with_asterisk(self):
+        block = "* Item one\n* Item two\n* Item three"
+        self.assertEqual(block_to_block_type(block), BlockType.UNORDERED_LIST)
+
+    def test_unordered_list_with_plus(self):
+        block = "+ Item one\n+ Item two"
+        self.assertEqual(block_to_block_type(block), BlockType.UNORDERED_LIST)
+
+    def test_unordered_list_mixed_markers_still_valid(self):
+        # CommonMark allows mixed markers - all are valid list markers
+        block = "- Item one\n* Item two\n+ Item three"
+        self.assertEqual(block_to_block_type(block), BlockType.UNORDERED_LIST)
+
     def test_ordered_list_block(self):
         block = "1. First item\n2. Second item\n3. Third item"
+        self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
+
+    def test_ordered_list_starting_from_5(self):
+        block = "5. Fifth item\n6. Sixth item\n7. Seventh item"
+        self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
+
+    def test_ordered_list_non_sequential(self):
+        block = "1. First\n3. Third\n5. Fifth"
         self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
 
     def test_mixed_list_block(self):
@@ -195,6 +216,18 @@ the **same** even with inline stuff
         html = node.to_html()
         self.assertEqual(html, "<div><blockquote>This is a <i>quote</i> with <b>inline</b> <code>code</code></blockquote></div>")
 
+    def test_blockquote_no_space_after_marker(self):
+        md = ">Quote without space"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><blockquote>Quote without space</blockquote></div>")
+
+    def test_blockquote_preserves_content_with_gt(self):
+        md = "> Math: 5 > 3 and 10 > 7"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><blockquote>Math: 5 &gt; 3 and 10 &gt; 7</blockquote></div>")
+
     def test_unordered_list(self):
         md = """
 - Item one
@@ -228,6 +261,24 @@ the **same** even with inline stuff
         "<li>Third with <i>italic</i></li>"
         "</ol></div>",
     )
+
+    def test_unordered_list_asterisk_to_html(self):
+        md = "* Item one\n* Item two"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><ul><li>Item one</li><li>Item two</li></ul></div>")
+
+    def test_unordered_list_plus_to_html(self):
+        md = "+ First\n+ Second"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><ul><li>First</li><li>Second</li></ul></div>")
+
+    def test_ordered_list_from_5_to_html(self):
+        md = "5. Fifth\n6. Sixth\n7. Seventh"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><ol><li>Fifth</li><li>Sixth</li><li>Seventh</li></ol></div>")
         
     def test_mixed_content(self):
         md = """
