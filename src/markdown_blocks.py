@@ -15,9 +15,34 @@ class BlockType(Enum):
 
 
 def markdown_to_blocks(markdown: str) -> List[str]:
-    """Args: markdown - The markdown text to convert to blocks.
-       Returns: A list of markdown blocks split by double newlines(always) and by single newline if it fits the criteria."""
-    return [block.strip() for block in markdown.split('\n\n') if block.strip()]
+    """Parse markdown into blocks, handling fenced code blocks correctly.
+        Args: markdown - The markdown text to convert to blocks.
+        Returns: A list of markdown blocks.
+    """
+    blocks: List[str] = []
+    lines: List[str] = markdown.split('\n')
+    current_block: List[str] = []
+    in_code_block: bool = False
+
+    for line in lines:
+        # Check if we're entering/exiting a code block
+        if line.strip().startswith('```'):
+            in_code_block = not in_code_block
+            current_block.append(line)
+        elif not in_code_block and line.strip() == '':
+            # Empty line outside code block = end of block
+            if current_block:
+                blocks.append('\n'.join(current_block))
+                current_block = []
+        else:
+            # Regular line or line inside code block
+            current_block.append(line)
+
+    # Don't forget the last block
+    if current_block:
+        blocks.append('\n'.join(current_block))
+
+    return [block.strip() for block in blocks if block.strip()]
     
 
 
@@ -26,7 +51,7 @@ def block_to_block_type(block: str) -> BlockType:
        Returns: The BlockType of the given markdown block."""
     if block.startswith(('# ', '## ', '### ', '#### ', '##### ', '###### ')):
         return BlockType.HEADING
-    elif block.startswith('```\n') and block.endswith('```'):
+    elif block.startswith('```') and block.endswith('```') and '\n' in block:
         return BlockType.CODE
     elif all(line.startswith('>') for line in block.splitlines()):
         return BlockType.QUOTE
@@ -78,10 +103,13 @@ def markdown_to_html_node(markdown: str) -> ParentNode:
             children.append(ParentNode(tag=f"h{heading_level}", children=parse_children(heading_text)))
 
         elif block_type == BlockType.CODE:
+            # Extract code content (skip first line with ``` and optional language)
+            first_newline = block.find('\n')
+            code_content = block[first_newline + 1 : -3]
             children.append(ParentNode(tag="pre", children=[
                             ParentNode(tag="code", children=[
-                            text_node_to_html_node(TextNode(block[4:-3], TextType.TEXT))])]))
-            
+                            text_node_to_html_node(TextNode(code_content, TextType.TEXT))])]))
+
         elif block_type == BlockType.QUOTE:
             quote_text = '\n'.join(line.lstrip('> ') for line in block.splitlines())
             children.append(ParentNode(tag="blockquote", children=parse_children(quote_text)))

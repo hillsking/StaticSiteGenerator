@@ -320,3 +320,85 @@ The end.
         node = markdown_to_html_node(md)
         html = node.to_html()
         self.assertEqual(html, "<div><p>John Doe<br />123 Main St<br />New York, NY 10001</p></div>")
+
+    # Tests for code blocks with language specification #
+    def test_code_block_with_python_language(self):
+        md = "```python\ndef hello():\n    print('world')\n```"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><pre><code>def hello():\n    print(&#x27;world&#x27;)\n</code></pre></div>")
+
+    def test_code_block_with_javascript_language(self):
+        md = "```javascript\nconsole.log('hello');\n```"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><pre><code>console.log(&#x27;hello&#x27;);\n</code></pre></div>")
+
+    def test_code_block_with_go_language(self):
+        md = "```go\nfunc main() {\n    fmt.Println(\"Hello\")\n}\n```"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, '<div><pre><code>func main() {\n    fmt.Println(&quot;Hello&quot;)\n}\n</code></pre></div>')
+
+    def test_code_block_without_language_still_works(self):
+        md = "```\nplain code\n```"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><pre><code>plain code\n</code></pre></div>")
+
+    def test_code_block_with_language_preserves_formatting(self):
+        md = "```python\nif True:\n    # comment\n    x = **not bold**\n    y = _not italic_\n```"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><pre><code>if True:\n    # comment\n    x = **not bold**\n    y = _not italic_\n</code></pre></div>")
+
+    def test_code_block_detection_with_language(self):
+        block_with_lang = "```python\ncode\n```"
+        block_without_lang = "```\ncode\n```"
+        self.assertEqual(block_to_block_type(block_with_lang), BlockType.CODE)
+        self.assertEqual(block_to_block_type(block_without_lang), BlockType.CODE)
+
+    # Tests for markdown_to_blocks with code blocks containing empty lines #
+    def test_code_block_with_empty_lines_stays_single_block(self):
+        md = """Text before.
+
+```python
+def hello():
+    print("line 1")
+
+    print("line 2")
+```
+
+Text after."""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(len(blocks), 3)
+        self.assertTrue(blocks[1].startswith('```python'))
+        self.assertTrue(blocks[1].endswith('```'))
+        self.assertIn('\n\n', blocks[1])  # Empty line preserved inside code block
+
+    def test_multiple_code_blocks_with_empty_lines(self):
+        md = """```python
+code1
+
+code2
+```
+
+```javascript
+code3
+
+code4
+```"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(len(blocks), 2)
+
+    def test_regular_paragraphs_still_split_correctly(self):
+        md = """Para 1
+
+Para 2
+
+Para 3"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(len(blocks), 3)
+        self.assertEqual(blocks[0], 'Para 1')
+        self.assertEqual(blocks[1], 'Para 2')
+        self.assertEqual(blocks[2], 'Para 3')

@@ -43,9 +43,14 @@ As Professor Tolkien said: "Fantasy is escapist, and that is its glory." He also
 
 Here's what `elflang` looks like (the perfect coding language):
 
-```
+```go
 func main(){
+    // Greet in Elvish
     fmt.Println("Aiya, Ambar!")
+
+    // Calculate the age of Gandalf
+    age := 2019
+    fmt.Printf("Gandalf is %d years old\n", age)
 }
 ```
 
