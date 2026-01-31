@@ -354,6 +354,130 @@ class TestTextToTextnodes(unittest.TestCase):
                 TextNode("nest2", TextType.ITALIC)]),
             TextNode(" end", TextType.TEXT)])
 
+    def test_text_to_textnodes_image_inside_link(self):
+        """[![alt](img)](url) -> clickable image"""
+        result = text_to_textnodes("[![alt](image.png)](https://example.com)")
+        self.assertEqual(result, [
+            TextNode("", TextType.LINK, link="https://example.com", children=[
+                TextNode("alt", TextType.IMAGE, link="image.png")])])
+
+    def test_text_to_textnodes_image_inside_link_with_surrounding_text(self):
+        result = text_to_textnodes("Click [![logo](logo.png)](https://home.com) here")
+        self.assertEqual(result, [
+            TextNode("Click ", TextType.TEXT),
+            TextNode("", TextType.LINK, link="https://home.com", children=[
+                TextNode("logo", TextType.IMAGE, link="logo.png")]),
+            TextNode(" here", TextType.TEXT)])
+
+    def test_text_to_textnodes_image_inside_link_empty_alt(self):
+        result = text_to_textnodes("[![](icon.svg)](https://site.com)")
+        self.assertEqual(result, [
+            TextNode("", TextType.LINK, link="https://site.com", children=[
+                TextNode("", TextType.IMAGE, link="icon.svg")])])
+
+    def test_text_to_textnodes_single_strikethrough(self):
+        result = text_to_textnodes("~~deleted~~")
+        self.assertEqual(result, [TextNode("deleted", TextType.STRIKETHROUGH)])
+
+    def test_text_to_textnodes_strikethrough_with_text(self):
+        result = text_to_textnodes("This is ~~deleted~~ text")
+        self.assertEqual(result, [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("deleted", TextType.STRIKETHROUGH),
+            TextNode(" text", TextType.TEXT)])
+
+    def test_text_to_textnodes_multiple_strikethrough(self):
+        result = text_to_textnodes("~~first~~ normal ~~second~~")
+        self.assertEqual(result, [
+            TextNode("first", TextType.STRIKETHROUGH),
+            TextNode(" normal ", TextType.TEXT),
+            TextNode("second", TextType.STRIKETHROUGH)])
+
+    def test_text_to_textnodes_strikethrough_nested_in_bold(self):
+        result = text_to_textnodes("**bold ~~and strikethrough~~**")
+        self.assertEqual(result, [
+            TextNode("", TextType.BOLD, children=[
+                TextNode("bold ", TextType.TEXT),
+                TextNode("and strikethrough", TextType.STRIKETHROUGH)])])
+        
+    def test_text_to_textnodes_bold_nested_in_strikethrough(self):
+        result = text_to_textnodes("~~deleted **bold** text~~")
+        self.assertEqual(result, [
+            TextNode("", TextType.STRIKETHROUGH, children=[
+                TextNode("deleted ", TextType.TEXT),
+                TextNode("bold", TextType.BOLD),
+                TextNode(" text", TextType.TEXT)])])
+
+    def test_text_to_textnodes_asterisk_for_italic(self):
+        result = text_to_textnodes("*italic*")
+        self.assertEqual(result, [TextNode("italic", TextType.ITALIC)])
+
+    def test_text_to_textnodes_asterisk_italic_with_text(self):
+        result = text_to_textnodes("some *italic* text")
+        self.assertEqual(result, [
+            TextNode("some ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" text", TextType.TEXT)])
+
+    def test_text_to_textnodes_double_underscore_for_bold(self):
+        result = text_to_textnodes("__bold__")
+        self.assertEqual(result, [TextNode("bold", TextType.BOLD)])
+
+    def test_text_to_textnodes_double_underscore_bold_with_text(self):
+        result = text_to_textnodes("some __bold__ text")
+        self.assertEqual(result, [
+            TextNode("some ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+            TextNode(" text", TextType.TEXT)])
+
+    def test_text_to_textnodes_mixed_bold_delimiters(self):
+        result = text_to_textnodes("**bold1** and __bold2__")
+        self.assertEqual(result, [
+            TextNode("bold1", TextType.BOLD),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("bold2", TextType.BOLD)])
+
+    def test_text_to_textnodes_mixed_italic_delimiters(self):
+        """Both _ and * should work for italic"""
+        result = text_to_textnodes("_italic1_ and *italic2*")
+        self.assertEqual(result, [
+            TextNode("italic1", TextType.ITALIC),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("italic2", TextType.ITALIC)])
+
+    def test_text_to_textnodes_asterisk_italic_in_double_asterisk_bold(self):
+        result = text_to_textnodes("**bold *italic text***")
+        self.assertEqual(result, [
+            TextNode("", TextType.BOLD, children=[
+                TextNode("bold ", TextType.TEXT),
+                TextNode("italic text", TextType.ITALIC)])])
+
+    def test_text_to_textnodes_underscore_italic_in_double_underscore_bold(self):
+        result = text_to_textnodes("__bold _italic_ text__")
+        self.assertEqual(result, [
+            TextNode("", TextType.BOLD, children=[
+                TextNode("bold ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" text", TextType.TEXT)])])
+
+    def test_text_to_textnodes_double_asterisk_bold_in_underscore_italic(self):
+        """**bold** inside _italic_ using different delimiters"""
+        result = text_to_textnodes("_italic **bold** text_")
+        self.assertEqual(result, [
+            TextNode("", TextType.ITALIC, children=[
+                TextNode("italic ", TextType.TEXT),
+                TextNode("bold", TextType.BOLD),
+                TextNode(" text", TextType.TEXT)])])
+
+    def test_text_to_textnodes_double_underscore_bold_in_asterisk_italic(self):
+        """__bold__ inside *italic* using different delimiters"""
+        result = text_to_textnodes("*italic __bold__ text*")
+        self.assertEqual(result, [
+            TextNode("", TextType.ITALIC, children=[
+                TextNode("italic ", TextType.TEXT),
+                TextNode("bold", TextType.BOLD),
+                TextNode(" text", TextType.TEXT)])])
+
 
 if __name__ == "__main__":
     unittest.main()

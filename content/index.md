@@ -1,6 +1,6 @@
 # Tolkien Fan Club
 
-![JRR Tolkien sitting](/images/tolkien.png)
+[![JRR Tolkien sitting](/images/tolkien.png)](https://en.wikipedia.org/wiki/J._R._R._Tolkien)
 
 Here's the deal, **I like _Tolkien_**.
 
@@ -8,7 +8,7 @@ Here's the deal, **I like _Tolkien_**.
 >  
 > -- J.R.R. Tolkien  
 >  
-> > "Fantasy is > reality when it comes to escapism"
+> "Fantasy is > reality when it comes to escapism"
 
 ## Blog posts
 

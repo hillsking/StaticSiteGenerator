@@ -3,9 +3,12 @@ from typing import List, Tuple, Optional
 from textnode import TextNode, TextType
 
 DELIMETERS = {"**": TextType.BOLD,
+              "__": TextType.BOLD,
+              "~~": TextType.STRIKETHROUGH,
               "![": TextType.IMAGE,
               "[": TextType.LINK,
               "_": TextType.ITALIC,
+              "*": TextType.ITALIC,
               "`": TextType.CODE}
 
 
@@ -19,21 +22,39 @@ def get_delimiter(text: str) -> Optional[str]:
 
 
 def get_closing_delim_idx(text: str, delim: str) -> Optional[int]:
-    """Args: text - The text to search. 
-             delim - the opening delimiter.
-       Returns: The index of the closing delimiter, or None if not found."""
-    if delim not in ("[", "!["):
-        idx = text.find(delim)
-        return idx if idx != -1 else None
-
-    if ((close_bracket_idx := text.find(']')) == -1 or 
-        (close_paren_idx := text.find('(', close_bracket_idx)) == -1):
+    """Find closing delimiter index, handling nested brackets for links/images."""
+    # Simple case: _, *, ~~, `
+    if delim not in ("[", "![", "**", "__"):
+        return idx if (idx := text.find(delim)) != -1 else None
+    
+    # Bold delimiters: ** and __ (handle overlapping like ***)
+    if delim in ("**", "__"):
+        if (idx := text.find(delim)) == -1:
+            return None
+        # Check for overlapping: *** has ** at pos 0 and 1
+        if idx + 1 < len(text) and text[idx+1:idx+1+len(delim)] == delim:
+            after_offset = idx + 1 + len(delim)
+            if after_offset >= len(text) or text[after_offset] != delim[0]:
+                return idx + 1
+        return idx
+    
+    # Links and images: [ and ![ (handle nesting)
+    depth, close_bracket_idx = 0, -1
+    for i, char in enumerate(text):
+        depth += (char == '[') - (char == ']')
+        if depth < 0 and text[i+1:i+2] == '(':
+            close_bracket_idx = i
+            break
+        elif depth < 0:
+            depth = 0
+    
+    if close_bracket_idx == -1:
         return None
-        
-    depth = 1
-    for i, char in enumerate(text[close_paren_idx+1:], close_paren_idx+1):
-        depth += (char == '(') - (char == ')')
-        if depth == 0:
+    
+    paren_depth = 1
+    for i, char in enumerate(text[close_bracket_idx+2:], close_bracket_idx+2):
+        paren_depth += (char == '(') - (char == ')')
+        if paren_depth == 0:
             return i
     return None
 
@@ -49,7 +70,10 @@ def extract_markdown_images(text: str) -> Tuple[Optional[str], Optional[str]]:
 def extract_markdown_links(text: str) -> Tuple[Optional[str], Optional[str]]:    
     """Args: text - The markdown text starting with [.
        Returns: A tuple (link_text, url) or (None, None) if not found."""
-    match = re.match(r'\[([^\[\]]*)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)
+    if (match := re.match(r'\[([^\[\]]*)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)) is not None:
+        return (match.group(1), match.group(2))
+    # Handle nested images inside links
+    match = re.match(r'\[(!\[[^\[\]]*\]\([^()]*\))\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)
     return (match.group(1), match.group(2)) if match else (None, None)
 
 

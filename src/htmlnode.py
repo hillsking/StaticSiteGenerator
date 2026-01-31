@@ -118,6 +118,12 @@ def text_node_to_html_node(text_node: TextNode) -> LeafNode | ParentNode:
             return LeafNode(tag="i", value=text_node.text)
     elif text_node.text_type == TextType.CODE:
         return LeafNode(tag="code", value=text_node.text)
+    elif text_node.text_type == TextType.STRIKETHROUGH:
+        if text_node.children:
+            return ParentNode(tag="s",
+                children=[text_node_to_html_node(child) for child in text_node.children])
+        else:
+            return LeafNode(tag="s", value=text_node.text)
     elif text_node.text_type == TextType.LINK:
         if text_node.link is None:
             raise ValueError("Link text type must have a URL")
