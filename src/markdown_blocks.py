@@ -13,6 +13,7 @@ class BlockType(Enum):
     QUOTE = 'quote'
     UNORDERED_LIST = 'unordered_list'
     ORDERED_LIST = 'ordered_list'
+    HORIZONTAL_RULE = 'horizontal_rule'
 
 
 def markdown_to_blocks(markdown: str) -> List[str]:
@@ -60,6 +61,8 @@ def block_to_block_type(block: str) -> BlockType:
         return BlockType.UNORDERED_LIST
     elif all(re.match(r'^\d+\. ', line) for line in block.splitlines()):
         return BlockType.ORDERED_LIST
+    elif re.match(r'^(-{3,}|\*{3,}|_{3,})$', block.strip()):
+        return BlockType.HORIZONTAL_RULE
     else:
         return BlockType.PARAGRAPH
     
@@ -127,6 +130,9 @@ def markdown_to_html_node(markdown: str) -> ParentNode:
             list_items = [line.split('. ', 1)[1].strip() for line in block.splitlines()]
             children.append(ParentNode(tag="ol", children=[
                             ParentNode(tag="li", children=parse_children(item)) for item in list_items]))
+        
+        elif block_type == BlockType.HORIZONTAL_RULE:
+            children.append(LeafNode(tag="hr", value=""))
             
     return ParentNode(tag="div", children=children)
 
