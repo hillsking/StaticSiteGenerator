@@ -1,135 +1,118 @@
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from textnode import TextNode, TextType
 
 DELIMETERS = {"**": TextType.BOLD,
+              "![": TextType.IMAGE,
+              "[": TextType.LINK,
               "_": TextType.ITALIC,
               "`": TextType.CODE}
 
 
-def create_nodes_by_delimiter(text: str) -> List[TextNode]:
-    """Args: text - The text to scan recursively.
-       Returns: A list of TextNodes split by delimiters."""
-    if not text:
-        return []
+def get_delimiter(text: str) -> Optional[str]:
+    """Args: text - The text to check for delimiters.
+       Returns: The first matching delimiter found, or None if none found."""
+    for delim in DELIMETERS.keys():
+        if text.startswith(delim):
+            return delim
+    return None
+
+
+def get_closing_delim_idx(text: str, delim: str) -> Optional[int]:
+    """Args: text - The text to search. 
+             delim - the opening delimiter.
+       Returns: The index of the closing delimiter, or None if not found."""
+    if delim not in ("[", "!["):
+        idx = text.find(delim)
+        return idx if idx != -1 else None
+
+    if ((close_bracket_idx := text.find(']')) == -1 or 
+        (close_paren_idx := text.find('(', close_bracket_idx)) == -1):
+        return None
+        
+    depth = 1
+    for i, char in enumerate(text[close_paren_idx+1:], close_paren_idx+1):
+        depth += (char == '(') - (char == ')')
+        if depth == 0:
+            return i
+    return None
+
+
+
+def extract_markdown_images(text: str) -> Tuple[Optional[str], Optional[str]]:
+    """Args: text - The markdown text starting with ![.
+       Returns: A tuple (alt_text, url) or (None, None) if not found."""
+    match = re.match(r'!\[([^\[\]]*)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)
+    return (match.group(1), match.group(2)) if match else (None, None)
+
+
+def extract_markdown_links(text: str) -> Tuple[Optional[str], Optional[str]]:    
+    """Args: text - The markdown text starting with [.
+       Returns: A tuple (link_text, url) or (None, None) if not found."""
+    match = re.match(r'\[([^\[\]]*)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)
+    return (match.group(1), match.group(2)) if match else (None, None)
+
+
+def get_content_and_link(text: str, delim: str) -> Tuple[Optional[str], Optional[str]]:
+    """Args: text - full delimited text (e.g., '**bold**' or '[text](url)').
+       Returns: (content, link) tuple."""
+    return (extract_markdown_images(text) if delim == "![" else
+            extract_markdown_links(text) if delim == "[" else
+            (text[len(delim):-len(delim)], None))
+
+
+def find_first_match(text: str) -> Tuple[str, int, int, Optional[str], Optional[str]] | None:
+    """Find first valid delimiter match in text.
+       Returns: (delim, start_idx, end_idx, content, link) or None if no match."""
+    for start_idx in range(len(text)):
+        if (delim := get_delimiter(text[start_idx:])) is None:
+            continue  # No delimiter at this position
+        
+        if (relative_end_idx := get_closing_delim_idx(text[start_idx + len(delim):], delim)) is None:
+            continue  # No closing delimiter found
+        
+        end_idx = (start_idx + len(delim) + relative_end_idx + 1 if delim in ("[", "![") else
+                   start_idx + len(delim) + relative_end_idx + len(delim))
+        
+        content, link = get_content_and_link(text[start_idx:end_idx], delim)
+        if not content and not link:
+            continue  # Nothing between delimiters
+        
+        return (delim, start_idx, end_idx, content, link)
     
-    for i in range(len(text)):
-        # Check for delimiters at current position
-        delim = (text[i] if text[i] in DELIMETERS else
-                 text[i:i+2] if len(text) > i+1 and text[i:i+2] in DELIMETERS else None)
-        if delim is None:
-            continue  # No delimiter at this position - skip
-        
-        # Find the matching closing delimiter
-        start_idx, end_idx = i, text.find(delim, i + len(delim))
-        if end_idx == -1:
-            continue  # No closing delimiter found - skip
-        
-        # Extract content between delimiters
-        content = text[start_idx + len(delim): end_idx]
-        if not content:
-            continue  # Empty content between delimiters - skip
-        
-        # Recursively process content for nested formatting
-        children: List[TextNode] = []
-        if delim != "`":
-            children = create_nodes_by_delimiter(content)
+    return None
 
-        # Check if content has nested formatting or is plain text
-        has_nesting = len(children) > 1 or (len(children) == 1 and children[0].text_type != TextType.TEXT)
 
-        # Return [TEXT before delimiter + delimited content/children + recursively scan after]
-        return (([TextNode(text[0:start_idx], TextType.TEXT)] if text[0:start_idx] else []) +
-                ([TextNode(text='', text_type=DELIMETERS[delim], children=children)] if has_nesting else
-                 [TextNode(text=content, text_type=DELIMETERS[delim])]) +
-                 create_nodes_by_delimiter(text[end_idx + len(delim):]))
+def build_text_node(delim: str, content: Optional[str], link: Optional[str], 
+                         children: Optional[List[TextNode]]) -> TextNode:
+    """Build a TextNode with proper nesting handling.
+        Args: delim - delimiter used.
+              content - content inside the delimiters.
+              link - link URL if applicable.
+              children - nested TextNodes if any.
+        Returns: TextNode representing the formatted text."""
+    has_nesting = (children is not None and (len(children) > 1 or 
+                  (len(children) == 1 and children[0].text_type != TextType.TEXT)))
     
-    # No paired delimiters found - return entire text as TEXT node
-    return [TextNode(text, TextType.TEXT)]
-
-
-def split_nodes_delimiter(old_nodes: List[TextNode]) -> List[TextNode]:
-    """Args: old_nodes - List of TextNodes to split by delimiter,
-       Returns: A new list of TextNodes with the specified delimiter split out."""
-    lst: List[TextNode] = []
-    for node in old_nodes:
-        if node.text_type != TextType.TEXT:
-            lst.append(node)
-            continue
-        lst.extend(create_nodes_by_delimiter(node.text))
-    return lst
-
-def extract_markdown_images(text: str) -> List[Tuple[str, str]]:
-    """Args: text - The markdown text to extract images from.
-       Returns: A list of tuples containing (alt_text, url) for each image found."""
-    return re.findall(r'!\[([^\[\]]*)]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)
-
-
-def extract_markdown_links(text: str) -> List[Tuple[str, str]]:    
-    """Args: text - The markdown text to extract links from.
-       Returns: A list of tuples containing (link_text, url) for each link found."""
-    return re.findall(r'(?<!!)\[([^\[\]]*)]\(([^()]*(?:\([^()]*\)[^()]*)*)\)', text)
-
-
-def split_nodes_image(old_nodes: List[TextNode]) -> List[TextNode]:
-    """Args: old_nodes - List of TextNodes to split by markdown image syntax.
-       Returns: A new list of TextNodes with markdown images split out as separate nodes."""
-    lst: List[TextNode] = []
-    for node in old_nodes:
-        # If the node is not plain text or has no image syntax, we keep it as is
-        images: List[Tuple[str, str]] = extract_markdown_images(node.text)
-        if node.text_type != TextType.TEXT or not images:
-            lst.append(node)
-            continue
-        
-        text_str = node.text
-        for alt, url in images:
-            parts = text_str.split(f"![{alt}]({url})", 1)
-            # Add preceding text if any
-            if parts[0]:
-                lst.append(TextNode(parts[0], TextType.TEXT))
-            # Add image node
-            lst.append(TextNode(alt, TextType.IMAGE, url))
-            # Update the remaining text to process
-            text_str = parts[1] if len(parts) > 1 else ''
-        # Add any remaining text after the last image
-        if text_str:
-            lst.append(TextNode(text_str, TextType.TEXT))
-    
-    return lst
-
-
-def split_nodes_link(old_nodes: List[TextNode]) -> List[TextNode]:
-    """Args: old_nodes - List of TextNodes to split by markdown link syntax.
-       Returns: A new list of TextNodes with markdown links split out as separate nodes."""
-    lst: List[TextNode] = []
-    for node in old_nodes:
-        # If the node is not plain text or has no link syntax, we keep it as is
-        links: List[Tuple[str, str]] = extract_markdown_links(node.text)
-        if node.text_type != TextType.TEXT or not links:
-            lst.append(node)
-            continue
-        
-        text_str = node.text
-        for link_text, url in links:
-            parts = text_str.split(f"[{link_text}]({url})", 1)
-            # Add preceding text if any
-            if parts[0]:
-                lst.append(TextNode(parts[0], TextType.TEXT))
-            # Add link node
-            lst.append(TextNode(link_text, TextType.LINK, url))
-            # Update the remaining text to process
-            text_str = parts[1] if len(parts) > 1 else ''
-        # Add any remaining text after the last link
-        if text_str:
-            lst.append(TextNode(text_str, TextType.TEXT))
-    
-    return lst
+    return (TextNode(text='', text_type=DELIMETERS[delim], link=link, children=children) if has_nesting else
+            TextNode(text=content, text_type=DELIMETERS[delim], link=link) if content is not None else
+            TextNode(text='', text_type=DELIMETERS[delim], link=link))
 
 
 def text_to_textnodes(text: str) -> List[TextNode]:
-    """Args: text - The plain text to convert.
-       Returns: A list of text nodes with all text_types in original text in order."""
+    """Convert text with inline markdown to a list of TextNodes.
+        Args: text - markdown text to convert.
+        Returns: list of TextNodes."""
     if not text:
         return []
-    return split_nodes_delimiter(split_nodes_link(split_nodes_image([TextNode(text, TextType.TEXT)])))
+    
+    if (match := find_first_match(text)) is None:
+        return [TextNode(text, TextType.TEXT)]
+    
+    delim, start, end, content, link = match
+    children = text_to_textnodes(content) if (delim != "`") and (content is not None) else None
+    
+    # Return [TextNode before match] + [Formatted TextNode with children] + [Recursivly build rest]
+    return (([TextNode(text[:start], TextType.TEXT)] if start > 0 else []) +
+            [build_text_node(delim, content, link, children)] +
+            text_to_textnodes(text[end:]))

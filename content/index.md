@@ -4,21 +4,23 @@
 
 Here's the deal, **I like _Tolkien_**.
 
-> "I am in fact a `Hobbit` in all but size."
->
-> -- J.R.R. Tolkien
+> "I am in fact a `Hobbit` in all but size."  
+>  
+> -- J.R.R. Tolkien  
+>  
+> > "Fantasy is > reality when it comes to escapism"
 
 ## Blog posts
 
-- [Why Glorfindel is More Impressive than Legolas](/blog/glorfindel)
+- [Why **Glorfindel** is More Impressive than _Legolas_](/blog/glorfindel)
 - [Why Tom Bombadil Was a Mistake](/blog/tom)
-- [The Unparalleled Majesty of "The Lord of the Rings"](/blog/majesty)
+- [The Unparalleled Majesty of _"The Lord of the Rings"_](/blog/majesty)
 
 ## Reasons I like Tolkien
 
 - You can spend **years** studying the legendarium and still _**not** understand_ its depths
-- It can be enjoyed by children and adults alike
-- Disney _didn't ruin it_ (okay, but Amazon might have)
+* It can be enjoyed by children and adults alike
++ Disney _didn't ruin it_ (okay, but Amazon might have)
 - It created an entirely new genre of fantasy
 
 ## My favorite characters (in order)
@@ -32,6 +34,12 @@ Here's the deal, **I like _Tolkien_**.
 7. Thorin
 8. Sauron
 9. Aragorn
+
+## Top 3 adaptations
+
+10. Peter Jackson's trilogy
+11. Animated Hobbit (1977)
+12. BBC radio drama
 
 ## Books & Reading Stats
 
@@ -62,4 +70,4 @@ Want to get in touch? [Contact me here](/contact).
 **Location:** Middle-earth (spiritually)  
 **Favorite quote:** _"Not all those who wander are lost"_
 
-This site was generated with a custom-built [static site generator](https://www.boot.dev/courses/build-static-site-generator-python) from the course on [Boot.dev](https://www.boot.dev).
+This site was generated with a custom-built [static site generator](https://www.boot.dev/courses/build-static-site-generator-python) from the **course on [Boot.dev](https://www.boot.dev)**. Learn more about [Markdown syntax](https://en.wikipedia.org/wiki/Markdown_(markup_language)).

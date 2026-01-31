@@ -121,7 +121,12 @@ def text_node_to_html_node(text_node: TextNode) -> LeafNode | ParentNode:
     elif text_node.text_type == TextType.LINK:
         if text_node.link is None:
             raise ValueError("Link text type must have a URL")
-        return LeafNode(tag="a", value=text_node.text, props={"href": text_node.link})
+        if text_node.children:
+            return ParentNode(tag="a",
+                children=[text_node_to_html_node(child) for child in text_node.children],
+                props={"href": text_node.link})
+        else:
+            return LeafNode(tag="a", value=text_node.text, props={"href": text_node.link})
     elif text_node.text_type == TextType.IMAGE:
         if text_node.link is None:
             raise ValueError("Image text type must have a URL")
